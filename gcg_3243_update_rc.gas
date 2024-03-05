@@ -1,0 +1,128 @@
+Program.Sub.ScreenSU.Start
+gui.SS_Form1..create
+gui.SS_Form1..caption("Update RC Description")
+gui.SS_Form1..size(6490,1575)
+gui.SS_Form1..position(0,0)
+gui.SS_Form1..event(unload,Unload)
+gui.SS_Form1..alwaysontop(False)
+gui.SS_Form1..fontname("Arial")
+gui.SS_Form1..fontsize(8)
+gui.SS_Form1..forecolor(0)
+gui.SS_Form1..fontstyle(,,,,)
+gui.SS_Form1..BackColor(-2147483633)
+gui.SS_Form1..controlbox(True)
+gui.SS_Form1..maxbutton(False)
+gui.SS_Form1..minbutton(False)
+gui.SS_Form1..mousepointer(0)
+gui.SS_Form1..moveable(True)
+gui.SS_Form1..sizeable(False)
+gui.SS_Form1..ShowInTaskBar(True)
+gui.SS_Form1..titlebar(True)
+gui.SS_Form1.lblPart.create(label,"RC Compound",True,1800,200,1,100,135,True,0,Arial,8,-2147483633,0)
+gui.SS_Form1.txtPart.create(textbox,"",True,1800,330,0,100,335,False,0,Arial,8,16777215,1)
+gui.SS_Form1.cmd_txtPart.create(button)
+gui.SS_Form1.cmd_txtPart.caption("^")
+gui.SS_Form1.cmd_txtPart.visible(True)
+gui.SS_Form1.cmd_txtPart.size(330,330)
+gui.SS_Form1.cmd_txtPart.zorder(0)
+gui.SS_Form1.cmd_txtPart.position(1895,335)
+gui.SS_Form1.cmd_txtPart.enabled(True)
+gui.SS_Form1.cmd_txtPart.fontname("Arial")
+gui.SS_Form1.cmd_txtPart.fontsize(8)
+gui.SS_Form1.cmd_txtPart.event(click,browser)
+gui.SS_Form1.txtDesc.create(textbox,"",True,2505,330,0,2455,335,True,0,Arial,8,16777215,1)
+gui.SS_Form1.txtDesc.maxLength(20)
+gui.SS_Form1.lblDesc.create(label,"Description",True,1800,200,1,2500,145,True,0,Arial,8,-2147483633,0)
+gui.SS_Form1.cmdUpdate.create(button)
+gui.SS_Form1.cmdUpdate.caption("Update")
+gui.SS_Form1.cmdUpdate.visible(True)
+gui.SS_Form1.cmdUpdate.size(1000,345)
+gui.SS_Form1.cmdUpdate.zorder(0)
+gui.SS_Form1.cmdUpdate.position(4965,315)
+gui.SS_Form1.cmdUpdate.enabled(True)
+gui.SS_Form1.cmdUpdate.fontname("Arial")
+gui.SS_Form1.cmdUpdate.fontsize(8)
+gui.SS_Form1.cmdUpdate.event(click,cmdupdate_click)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+
+Variable.UDT.uRC.Define("Part",String,"PART")
+Variable.UDT.uRC.Define("Description",String,"DESCRIPTION")
+Variable.uGlobal.uRC.Declare("uRC")
+Variable.Global.sPart.Declare(String)
+Variable.Global.sDesc.Declare(String)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Coded by: ERIC
+'Project Start Date: 10/31/2011
+'Quote 2935
+
+
+F.ODBC.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+Gui.SS_Form1..Show
+
+Program.Sub.Main.End
+
+Program.Sub.Unload.Start
+
+f.ODBC.Connection!con.Close
+F.Intrinsic.Control.End
+
+Program.Sub.Unload.End
+
+program.sub.cmdupdate_click.start
+V.Local.sSQL.Declare(String)
+V.Local.sRet.Declare(String)
+V.Local.sQuery.Declare(String)
+
+'updates all durometer descriptions for part that was selected in browser.
+F.Intrinsic.String.Concat("Select * From V_INVENTORY_MST2 Where Text_Info1 = '",V.Global.sPart.Trim,"'",V.Local.sSQL)
+F.ODBC.Connection!con.OpenRecordsetRW("rstA",V.Local.sSQL)
+F.Intrinsic.Control.DoUntil(V.ODBC.con!rstA.EOF,=,True)
+	F.ODBC.con!rstA.Set!Text_Info2(V.Screen.SS_Form1!txtDesc.Text.Trim)
+	F.ODBC.con!rstA.MoveNext
+F.Intrinsic.Control.Loop
+F.ODBC.con!rstA.Close
+F.Intrinsic.UI.Msgbox("Durometer description updated","Durometer description")
+
+
+program.sub.cmdupdate_click.end
+
+program.sub.browser.start
+V.Local.sRet.Declare(String)
+V.Local.sCol.Declare(String)
+V.Local.sColW.Declare(String)
+V.Local.sQuery.Declare(String)
+
+F.Intrinsic.String.Split("RC Compound*!*Durometer*!*Product Line","*!*",V.Local.sCol)
+F.Intrinsic.String.Split("3000*!*3000*!*2000","*!*",V.local.sColW)
+V.Local.sQuery.Set("Select A.Part, B.Text_info2, A.Product_Line From V_INVENTORY_MSTR as A, V_INVENTORY_MST2 as B Where A.Part = B.Part and A.Product_Line = 'RC' Order By A.Part")
+
+F.Intrinsic.UI.SetBrowserHotTypeAhead(True)
+F.Intrinsic.UI.Browser("Select a RC Compound","con",V.Local.sQuery,V.Local.sCol,V.Local.sColW,V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***CANCEL***")
+	F.Intrinsic.String.Split(V.Local.sRet,"*!*",V.Local.sRet)
+	Gui.SS_Form1.txtPart.Text(V.Local.sRet(0).Trim)
+	Gui.SS_Form1.txtDesc.Text(V.Local.sRet(1).Trim)
+	V.Global.sPart.Set(V.Local.sRet(0).Trim)
+	V.Global.sDesc.Set(V.Local.sRet(1).Trim)
+F.Intrinsic.Control.EndIf
+
+
+program.sub.browser.end
+
+Program.Sub.ScreenSS.Start
+SS_Form1{{CAPTION::Update RC Description
+SS_Form1.CTRL{{NAME::lblPart\\TYPE::1\\CAPTION::RC Compound\\GROUP::1\\BROWSER::0\\SIZE::1
+SS_Form1.CTRL{{NAME::txtPart\\TYPE::2\\GROUP::1\\BROWSER::1\\SIZE::1
+SS_Form1.CTRL{{NAME::txtDesc\\TYPE::2\\GROUP::1\\BROWSER::0\\SIZE::1
+SS_Form1.CTRL{{NAME::lblDesc\\TYPE::1\\CAPTION::Description\\GROUP::1\\BROWSER::0\\SIZE::1
+SS_Form1.CTRL{{NAME::cmdUpdate\\TYPE::5\\CAPTION::Update\\GROUP::1\\BROWSER::0\\SIZE::1
+
+Program.Sub.ScreenSS.End
+
