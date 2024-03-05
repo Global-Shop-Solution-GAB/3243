@@ -1,0 +1,107 @@
+Program.Sub.ScreenSU.Start
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Coded by: ERIC
+'Project Start Date: 10/28/2011
+'Quote 2935
+'Hook 10161,10120,10220
+
+F.ODBC.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+'rename script1 button
+V.Passed.000069.Set("Load CMPD")
+
+'Loads INFO1 browser with parts with product_line RC ( fires on script 1 button)
+F.Intrinsic.Control.If(V.Caller.Hook,=,10220)
+	F.Intrinsic.Control.CallSub(Load_compound)
+F.Intrinsic.Control.EndIf
+
+'populate INFO2 box with durometer description when INFO1 data is selected from browser.
+F.Intrinsic.Control.If(V.Caller.Hook,=,10161)
+	F.Intrinsic.Control.CallSub(Load_durometer)
+F.Intrinsic.Control.EndIf
+
+'update all durometer descriptions when save is clicked
+'created seperate GAB script to do this GCG_Update_RC.gas
+'F.Intrinsic.Control.If(V.Caller.Hook,=,10170)
+'	F.Intrinsic.Control.CallSub(Update)
+'F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.CallSub(Unload)
+'85 + OR - 5 SHORE A
+
+Program.Sub.Main.End
+
+Program.Sub.Load_Compound.Start
+V.Local.sSQL.Declare(String)
+V.Local.sRet.Declare(String)
+V.Local.sQuery.Declare(String)
+
+V.Local.sQuery.Set("Delete V_INV_INFO1")
+F.ODBC.Connection!con.Execute(V.Local.sQuery)
+
+V.Local.sSQL.Set("Select Part From V_INVENTORY_MSTR Where Product_line = 'RC'")
+F.ODBC.Connection!con.OpenRecordsetRO("rst",V.Local.sSQL)
+F.Intrinsic.Control.If(V.ODBC.con!rst.EOF,=,False)
+	F.ODBC.Connection!con.OpenRecordsetRW("rstA","Select Key_Code From V_INV_INFO1")
+	F.Intrinsic.Control.DoUntil(V.ODBC.con!rst.EOF,=,True)
+		F.ODBC.con!rstA.AddNew
+		F.ODBC.con!rstA.Set!KEY_CODE(V.ODBC.con!rst.FieldValTrim!PART)
+		F.ODBC.con!rstA.Update
+		F.ODBC.con!rst.MoveNext
+	F.Intrinsic.Control.Loop
+	F.ODBC.con!rstA.Close
+F.Intrinsic.Control.EndIf
+F.ODBC.con!rst.Close
+
+F.Intrinsic.Control.CallSub(Unload)
+
+
+Program.Sub.Load_Compound.End
+
+Program.Sub.Unload.Start
+
+F.ODBC.Connection!con.Close
+F.Intrinsic.Control.End
+
+Program.Sub.Unload.End
+
+Program.Sub.Load_Durometer.Start
+V.Local.sSQL.Declare(String)
+V.Local.sPart.Declare(String)
+V.Local.sDesc.Declare(String)
+
+F.Intrinsic.String.Concat("Select Text_Info2 From V_Inventory_MST2 Where Text_Info1 = '",V.Passed.000027,"'",V.Local.sSQL)
+F.ODBC.Connection!con.OpenRecordsetRO("rst",V.Local.sSQL)
+F.Intrinsic.Control.If(V.ODBC.con!rst.EOF,=,False)
+	V.Passed.000028.Set(V.ODBC.con!rst.FieldValTrim!Text_Info2)
+F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.CallSub(Unload)
+
+Program.Sub.Load_Durometer.End
+
+Program.Sub.Update.Start
+'V.Local.sSQL.Declare(String)
+'V.Local.sRet.Declare(String)
+'V.Local.sQuery.Declare(String)
+'V.Local.sMsg.Declare(String)
+'
+'F.Intrinsic.Debug.InvokeDebugger
+'F.Intrinsic.Debug.Stop
+'
+'F.Intrinsic.String.Concat("Select * From V_INVENTORY_MST2 Where Text_Info1 = '",V.Passed.000027.Trim,"'",V.Local.sSQL)
+'F.ODBC.Connection!con.OpenRecordsetRW("rstA",V.Local.sSQL)
+'F.Intrinsic.Control.DoUntil(V.ODBC.con!rstA.EOF,=,True)
+'	F.ODBC.con!rstA.Set!Text_Info2(V.Passed.000028.Trim)
+'	F.ODBC.con!rstA.MoveNext
+'F.Intrinsic.Control.Loop
+'F.ODBC.con!rstA.Close
+'F.Intrinsic.Control.CallSub(Unload)
+
+Program.Sub.Update.End
+
+
